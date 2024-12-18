@@ -1,0 +1,6 @@
+.vscode
+.venv
+captures
+output.mp4
+blcert.pem
+.DS_Store
