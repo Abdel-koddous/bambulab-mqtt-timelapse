@@ -17,7 +17,7 @@ args = parser.parse_args()
 def on_message(client, userdata, msg):
     msg = json.loads(msg.payload.decode())
     print(f"Received message: {msg}")
-    if msg.get("print") and msg["print"].get("gcode_state") == "PAUSE":
+    if msg.get("print") and msg["print"].get("layer_num"):
 
         # Take photo
         camera = gp.Camera()
@@ -31,14 +31,6 @@ def on_message(client, userdata, msg):
         camera_file.save(target_path)
         camera.exit()
         print(f"Photo captured and saved at: {target_path}")
-
-        # Resume print
-        print(f"Resuming...")
-        client.publish(
-            f"device/{args.device_id}/request",
-            '{ "print": { "sequence_id": "0", "command": "resume", "param": "" } }',
-        )
-        print(f"Resume command sent!")
 
 
 client = mqtt.Client()
