@@ -9,7 +9,7 @@ openssl s_client -showcerts -connect 192.168.86.38:8883 </dev/null | sed -n -e '
 ## Post processing command
 
 ```
-sed -i '' -r "/^M991 S0 P[0-9]+.*$/s/.*/&\nM400 S10/"
+sed -i '' -r "/^M991 S0 P[0-9]+.*$/s/.*/&\nM400 S8/"
 ```
 
 ## Generate output

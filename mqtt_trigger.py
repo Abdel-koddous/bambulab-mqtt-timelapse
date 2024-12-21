@@ -3,6 +3,9 @@ import json
 import paho.mqtt.client as mqtt
 import argparse
 import gphoto2 as gp
+import os
+
+DESTINATION_FOLDER = "./captures"
 
 parser = argparse.ArgumentParser(description="MQTT Client with TLS and CA file")
 parser.add_argument("--cafile", type=str, help="Path to CA certificate file")
@@ -15,22 +18,25 @@ args = parser.parse_args()
 
 
 def on_message(client, userdata, msg):
+    get_timestamp = lambda: dt.now().strftime("%Y%m%d%H%M%S")
     msg = json.loads(msg.payload.decode())
-    print(f"Received message: {msg}")
+    print(f"{get_timestamp()} - {msg}")
     if msg.get("print") and msg["print"].get("layer_num"):
-
-        # Take photo
+        start = dt.now()
         camera = gp.Camera()
         camera.init()
         file_path = camera.capture(gp.GP_CAPTURE_IMAGE)
         camera_file = camera.file_get(
             file_path.folder, file_path.name, gp.GP_FILE_TYPE_NORMAL
         )
-        timestamp = dt.now().strftime("%Y%m%d%H%M%S")
-        target_path = f"./captures/photo_{timestamp}.jpg"
+        target_path = f"{DESTINATION_FOLDER}/photo_{get_timestamp()}.jpg"
+        if not os.path.exists(DESTINATION_FOLDER):
+            os.makedirs(DESTINATION_FOLDER)
         camera_file.save(target_path)
         camera.exit()
-        print(f"Photo captured and saved at: {target_path}")
+        print(
+            f"{get_timestamp()} - Photo captured and saved at: {target_path}, time: {dt.now() - start}"
+        )
 
 
 client = mqtt.Client()
