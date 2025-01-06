@@ -4,3 +4,4 @@ captures
 *.mp4
 blcert.pem
 .DS_Store
+*.log
