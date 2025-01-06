@@ -51,6 +51,8 @@ def on_message(client, userdata, msg):
     except json.JSONDecodeError:
         logging.error("Failed to decode message payload as JSON")
 
+def get_timestamp():
+    return dt.now().strftime("%Y%m%d%H%M%S")
 
 def capture_photo():
     try:
@@ -67,7 +69,7 @@ def capture_photo():
             os.makedirs(DESTINATION_FOLDER)
 
         target_path = (
-            f"{DESTINATION_FOLDER}/photo_{dt.now().strftime("%Y%m%d%H%M%S")}.jpg"
+            f"{DESTINATION_FOLDER}/photo_{get_timestamp()}.jpg"
         )
         camera_file.save(target_path)
         camera.exit()
