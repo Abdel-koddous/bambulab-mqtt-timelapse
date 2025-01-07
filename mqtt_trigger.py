@@ -8,8 +8,16 @@ import gphoto2 as gp
 import paho.mqtt.client as mqtt
 from logging.handlers import RotatingFileHandler
 
+log_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.INFO)
+stream_handler.setFormatter(log_formatter)
+
+logging.basicConfig(level=logging.INFO, handlers=[stream_handler])
+
+
 parser = argparse.ArgumentParser(description="MQTT Client with TLS and CA file")
-parser.add_argument("--log", type=str, help="Log file path")
 parser.add_argument(
     "--destination", required=True, type=str, help="Destination folder for photos"
 )
@@ -22,18 +30,6 @@ parser.add_argument("--broker", type=str, required=True, help="MQTT broker")
 parser.add_argument("--port", type=int, required=True, help="MQTT port")
 parser.add_argument("--device_id", type=str, required=True, help="MQTT device ID")
 args = parser.parse_args()
-
-log_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-
-file_handler = RotatingFileHandler(args.log, maxBytes=5 * 1024 * 1024, backupCount=3)
-file_handler.setLevel(logging.INFO)
-file_handler.setFormatter(log_formatter)
-
-stream_handler = logging.StreamHandler()
-stream_handler.setLevel(logging.INFO)
-stream_handler.setFormatter(log_formatter)
-
-logging.basicConfig(level=logging.INFO, handlers=[file_handler, stream_handler])
 
 
 def on_message(client, userdata, msg):
