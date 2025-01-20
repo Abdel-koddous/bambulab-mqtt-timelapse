@@ -8,7 +8,7 @@ import gphoto2 as gp
 import paho.mqtt.client as mqtt
 from logging.handlers import RotatingFileHandler
 
-log_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+log_formatter = logging.Formatter("%(levelname)s - %(message)s")
 
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging.INFO)
@@ -36,7 +36,11 @@ def on_message(client, userdata, msg):
     try:
         payload = json.loads(msg.payload.decode())
         logging.info(f"Received message: {payload}")
-        if payload.get("print") and payload["print"].get("layer_num"):
+        if (
+            payload.get("print")
+            and payload["print"].get("layer_num")
+            and payload.get("gcode_state") != "FINISH"
+        ):
             capture_photo(args.destination)
     except json.JSONDecodeError:
         logging.error("Failed to decode message payload as JSON")
