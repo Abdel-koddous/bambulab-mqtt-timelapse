@@ -36,10 +36,9 @@ def on_message(client, userdata, msg):
     try:
         payload = json.loads(msg.payload.decode())
         logging.info(f"Received message: {payload}")
-        if (
-            payload.get("print")
-            and payload["print"].get("layer_num")
-            and payload.get("gcode_state") != "FINISH"
+        if payload.get("print") and (
+            payload["print"].get("layer_num")
+            and payload["print"].get("gcode_state") != "FINISH"
         ):
             capture_photo(args.destination)
     except json.JSONDecodeError:
