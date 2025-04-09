@@ -1,7 +1,7 @@
 import os
 import json
 import signal
-from datetime import datetime as dt
+from datetime import datetime as dt, time
 import argparse
 import logging
 import gphoto2 as gp
@@ -39,7 +39,20 @@ def on_message(client, userdata, msg):
         if payload.get("print") and (
             payload["print"].get("layer_num") and payload["print"].get("msg") == 1
         ):
-            capture_photo(args.destination)
+            try:
+                capture_photo(args.destination)
+            except Exception as e:
+                logging.error(f"Pausing print job due to error")
+                client.publish(
+                    f"device/{args.device_id}/request",
+                    json.dumps(
+                        {
+                            "print": {
+                                "command": "pause",
+                            }
+                        }
+                    ),
+                )
     except json.JSONDecodeError:
         logging.error("Failed to decode message payload as JSON")
 
@@ -68,6 +81,7 @@ def capture_photo(destination_folder):
         )
     except gp.GPhoto2Error as e:
         logging.error(f"Camera error: {e}")
+        raise e
 
 
 def handle_exit(sig, frame):
