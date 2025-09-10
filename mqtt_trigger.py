@@ -1,12 +1,12 @@
 import os
 import json
 import signal
-from datetime import datetime as dt, time
+import sys
+from datetime import datetime as dt
 import argparse
 import logging
 import gphoto2 as gp
 import paho.mqtt.client as mqtt
-from logging.handlers import RotatingFileHandler
 
 log_formatter = logging.Formatter("%(levelname)s - %(message)s")
 
@@ -42,17 +42,20 @@ def on_message(client, userdata, msg):
             try:
                 capture_photo(args.destination)
             except Exception as e:
-                logging.error(f"Pausing print job due to error")
-                client.publish(
-                    f"device/{args.device_id}/request",
-                    json.dumps(
-                        {
-                            "print": {
-                                "command": "pause",
+                logging.error(f"Pausing print job due to error: {e}")
+                try:
+                    client.publish(
+                        f"device/{args.device_id}/request",
+                        json.dumps(
+                            {
+                                "print": {
+                                    "command": "pause",
+                                }
                             }
-                        }
-                    ),
-                )
+                        ),
+                    )
+                except Exception as publish_error:
+                    logging.error(f"Failed to publish pause command: {publish_error}")
     except json.JSONDecodeError:
         logging.error("Failed to decode message payload as JSON")
 
@@ -86,19 +89,24 @@ def capture_photo(destination_folder):
 
 def handle_exit(sig, frame):
     logging.info("Shutting down...")
-    client.disconnect()
-    client.loop_stop()
-    exit(0)
+    try:
+        client.disconnect()
+        client.loop_stop()
+    except Exception as e:
+        logging.error(f"Error during shutdown: {e}")
+    sys.exit(0)
 
 
+# Test camera connection
+camera_test = None
 try:
-    camera = gp.Camera()
-    camera.init()
-    camera.exit()
+    camera_test = gp.Camera()
+    camera_test.init()
+    camera_test.exit()
     logging.info("Camera connected successfully")
 except gp.GPhoto2Error as e:
     logging.error(f"Error connecting to camera: {e}")
-    exit(1)
+    sys.exit(1)
 
 client = mqtt.Client()
 client.on_message = on_message
