@@ -3,7 +3,7 @@
 An automated camera trigger system for creating timelapse videos of your 3D prints.  
 This script listens for MQTT layer notifications from **Bambu Lab printers** and triggers your camera to capture photos at each layer.  
 
-✅ **Tested on Bambu Lab A1**  
+✅ **Tested on Bambu Lab A1 + Sony ZV-E10 Camera**
 ⚠️ Currently **only supports Bambu Lab printers**. Other printers may require message format adjustments.
 
 ---
