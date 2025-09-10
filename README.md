@@ -1,109 +1,97 @@
-# MQTT Based 3D Printing Timelapse
+# MQTT-Based 3D Printing Timelapse (Bambu Lab Only)
 
-An automated camera trigger system that captures photos during 3D printing based on MQTT layer notifications. This tool listens for MQTT messages from your 3D printer and automatically captures photos at each layer to create timelapse videos.
+An automated camera trigger system for creating timelapse videos of your 3D prints.  
+This script listens for MQTT layer notifications from **Bambu Lab printers** and triggers your camera to capture photos at each layer.  
 
-## Features
+✅ **Tested on Bambu Lab A1**  
+⚠️ Currently **only supports Bambu Lab printers**. Other printers may require message format adjustments.
 
-- 📸 Automatic photo capture triggered by MQTT layer notifications
-- 📷 Compatible with gPhoto2-supported cameras (DSLR, mirrorless, etc.)
-- 🛠️ Automatic print job pause on camera errors
-- 📁 Organized photo storage with timestamped filenames
+---
 
-## Prerequisites
+## ✨ Features
 
-- Python 3.7 or higher
-- A camera compatible with gPhoto2 (most DSLR and mirrorless cameras)
-- MQTT broker with TLS support
-- 3D printer firmware that sends MQTT layer notifications
+- 📸 Automatic photo capture triggered by MQTT layer-change events  
+- 📷 Works with any **gPhoto2-compatible camera** (DSLR, mirrorless, etc.)  
+- 🛠️ Automatically pauses print if camera capture fails  
+- 📁 Saves images with timestamps for easy timelapse generation  
 
-## Installation
+---
 
-1. **Clone the repository:**
+## 📋 Requirements
+
+- **Python** 3.7+  
+- **gPhoto2** (for camera control)  
+- **MQTT broker** with TLS support  
+- **Bambu Lab printer** (tested on A1, other models unverified)  
+
+---
+
+## 🚀 Installation
+
+1. **Clone this repo**:
    ```bash
    git clone https://github.com/AlexanderBiba/cam-trigger.git
    cd cam-trigger
    ```
 
-2. **Install dependencies:**
+2. **Install Python dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Install gPhoto2 system dependencies:**
-   
-   **On macOS:**
+3. **Install gPhoto2**:
+
+   **macOS**:
    ```bash
    brew install libgphoto2
    ```
-   
-   **On Ubuntu/Debian:**
+
+   **Ubuntu/Debian**:
    ```bash
    sudo apt-get install libgphoto2-dev
    ```
-   
-   **On other systems:** See the [gPhoto2 installation guide](http://www.gphoto.org/proj/libgphoto2/support.php)
 
-4. **Connect your camera** via USB and ensure it's recognized by gPhoto2:
+   **Other systems**: See [gPhoto2 install guide](http://www.gphoto.org/proj/libgphoto2/support.php)
+
+4. **Verify camera connection**:
    ```bash
    gphoto2 --auto-detect
    ```
 
-## Usage
+---
 
-### Basic Usage
+## ▶️ Usage
+
+Basic run:
 
 ```bash
-python mqtt_trigger.py \
-  --destination ./captures \
-  --cafile ./blcert.pem \
-  --username your_mqtt_username \
-  --password your_mqtt_password \
-  --broker your.mqtt.broker.com \
-  --port 8883 \
-  --device_id your_printer_id
+python mqtt_trigger.py   --destination ./captures   --cafile ./blcert.pem   --username YOUR_MQTT_USER   --password YOUR_MQTT_PASS   --broker YOUR.MQTT.BROKER   --port 8883   --device_id YOUR_PRINTER_ID
 ```
 
-### Command Line Arguments
+### Arguments
 
 | Argument | Required | Description |
 |----------|----------|-------------|
-| `--destination` | Yes | Directory where photos will be saved |
-| `--cafile` | Yes | Path to CA certificate file for MQTT TLS |
-| `--username` | Yes | MQTT broker username |
-| `--password` | Yes | MQTT broker password |
-| `--broker` | Yes | MQTT broker hostname or IP address |
-| `--port` | Yes | MQTT broker port (typically 8883 for TLS) |
-| `--device_id` | Yes | Unique identifier for your 3D printer |
+| `--destination` | ✅ | Folder where images are stored |
+| `--cafile` | ✅ | Path to CA cert for MQTT TLS |
+| `--username` | ✅ | MQTT username |
+| `--password` | ✅ | MQTT password |
+| `--broker` | ✅ | MQTT broker hostname/IP |
+| `--port` | ✅ | MQTT broker port (usually `8883`) |
+| `--device_id` | ✅ | Bambu Lab printer ID |
 
-### Example Configuration
+---
 
+## ⚙️ Setup Steps
+
+### 1. Export Broker Certificate
 ```bash
-python mqtt_trigger.py \
-  --destination ./timelapse_photos \
-  --cafile ./mqtt_cert.pem \
-  --username printer_user \
-  --password secure_password123 \
-  --broker mqtt.example.com \
-  --port 8883 \
-  --device_id ender3_v2
+openssl s_client -showcerts -connect YOUR_BROKER_IP:8883 </dev/null  | sed -n -e '/-.BEGIN/,/-.END/ p' > blcert.pem
 ```
 
-## Setup Instructions
+### 2. Bambu Lab MQTT Messages
 
-### 1. Get MQTT Certificate
-
-To establish a secure connection to your MQTT broker, you'll need to obtain the CA certificate:
-
-```bash
-openssl s_client -showcerts -connect YOUR_BROKER_IP:8883 </dev/null | sed -n -e '/-.BEGIN/,/-.END/ p' > blcert.pem
-```
-
-Replace `YOUR_BROKER_IP` with your actual MQTT broker IP address.
-
-### 2. Configure Your 3D Printer
-
-Ensure your 3D printer firmware is configured to send MQTT messages with the following structure:
-
+This project expects payloads like:
 ```json
 {
   "print": {
@@ -113,62 +101,58 @@ Ensure your 3D printer firmware is configured to send MQTT messages with the fol
 }
 ```
 
-The script triggers photo capture when:
-- `print.layer_num` is present (any layer number)
-- `print.msg` equals `1`
+Trigger condition:
+- `print.layer_num` present  
+- `print.msg == 1`  
 
-### 3. Create Output Directory
-
+### 3. Create Capture Folder
 ```bash
 mkdir captures
 ```
 
-## Post Processing Commands
+---
 
-### Add Pause Commands to G-code
+## 🎞️ Post-Processing
 
-To ensure the camera has time to capture photos, you may want to add pause commands to your G-code:
+### Add Layer Pauses (Optional)
 
+Insert wait commands into G-code so the camera has time to shoot:
 ```bash
-sed -i '' -r "/^M991 S0 P[0-9]+.*$/s/.*/&\nM400 S8/" your_print_file.gcode
+sed -i '' -r "/^M991 S0 P[0-9]+.*$/s/.*/&
+M400 S8/" your_file.gcode
+```
+Adds `M400 S8` (8 sec wait) after each layer notification.
+
+### Generate Timelapse
+```bash
+ffmpeg -framerate 30 -pattern_type glob -i "captures/*.jpg"  -c:v libx264 -r 30 -pix_fmt yuv420p output.mp4
 ```
 
-This adds an `M400 S8` (wait 8 seconds) command after each layer change notification.
+---
 
-### Generate Timelapse Video
+## 🛠️ Troubleshooting
 
-After your print is complete, create a timelapse video from the captured photos:
+**Camera**  
+- Not detected → check USB & `gphoto2 --auto-detect`  
+- Permission errors → add user to `plugdev` (Linux)  
+- Camera busy → close other apps (e.g., photo apps)  
 
-```bash
-ffmpeg -framerate 30 -pattern_type glob -i "captures/*.jpg" -c:v libx264 -r 30 -pix_fmt yuv420p output.mp4
-```
+**MQTT**  
+- Connection refused → verify broker/port/creds  
+- JSON decode error → check payload format  
+- Pause publish failed → broker issue  
 
-## Troubleshooting
+---
 
-### Camera Issues
+## 🤝 Contributing
+PRs welcome! Extend support for other printers or improve handling.
 
-- **Camera not detected:** Ensure your camera is connected via USB and recognized by gPhoto2
-- **Permission errors:** On Linux, you may need to add your user to the `plugdev` group
-- **Camera busy:** Make sure no other applications are using the camera
+---
 
-### MQTT Connection Issues
+## 📜 License
+MIT License.
 
-- **Connection refused:** Verify broker address, port, and credentials
+---
 
-### Common Error Messages
-
-- `Camera error: [Error code]` - Check camera connection and gPhoto2 installation
-- `Failed to decode message payload as JSON` - Verify MQTT message format from your printer
-- `Failed to publish pause command` - Check MQTT broker connection
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is open source. Please check the license file for details.
-
-## Support
-
-If you encounter any issues or have questions, please open an issue on GitHub.
+## 🧑‍💻 Support
+Open an issue on GitHub if you encounter problems.
