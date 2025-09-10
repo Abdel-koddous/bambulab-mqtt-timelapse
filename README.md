@@ -114,7 +114,7 @@ mkdir captures
 
 ## 🎞️ Post-Processing
 
-### Add Layer Pauses (Optional)
+### Add Layer Pauses (Important!)
 
 Insert wait commands into G-code so the camera has time to shoot:
 ```bash
@@ -123,7 +123,7 @@ M400 S8/" your_file.gcode
 ```
 Adds `M400 S8` (8 sec wait) after each layer notification.
 
-### Generate Timelapse
+### Generate Timelapse from photos
 ```bash
 ffmpeg -framerate 30 -pattern_type glob -i "captures/*.jpg"  -c:v libx264 -r 30 -pix_fmt yuv420p output.mp4
 ```
