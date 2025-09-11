@@ -1,14 +1,18 @@
-# MQTT-Based 3D Printing Timelapse (Bambu Lab Only)
+# MQTT-Based 3D Printing Timelapse Trigger
 
 An automated camera trigger system for creating timelapse videos of your 3D prints.  
-This script listens for MQTT layer notifications from **Bambu Lab printers** and triggers your camera to capture photos at each layer.  
+This script listens for MQTT layer notifications from **Bambu Lab printers** and triggers your camera to capture photos at each layer.
+
+
+https://github.com/user-attachments/assets/d5daf065-f089-45fb-995f-32c9f892c715
+
 
 ✅ **Tested on Bambu Lab A1 + Sony ZV-E10 Camera**
 ⚠️ Currently **only supports Bambu Lab printers**. Other printers may require message format adjustments.
 
 ---
 
-## ✨ Features
+## Features
 
 - 📸 Automatic photo capture triggered by MQTT layer-change events  
 - 📷 Works with any **gPhoto2-compatible camera** (DSLR, mirrorless, etc.)  
@@ -17,7 +21,7 @@ This script listens for MQTT layer notifications from **Bambu Lab printers** and
 
 ---
 
-## 📋 Requirements
+## Requirements
 
 - **Python** 3.7+  
 - **gPhoto2** (for camera control)  
@@ -26,11 +30,11 @@ This script listens for MQTT layer notifications from **Bambu Lab printers** and
 
 ---
 
-## 🚀 Installation
+## Installation
 
 1. **Clone this repo**:
    ```bash
-   git clone https://github.com/AlexanderBiba/cam-trigger.git
+   git clone https://github.com/AlexanderBiba/bambulab-timelapse-trigger.git
    cd cam-trigger
    ```
 
@@ -60,7 +64,7 @@ This script listens for MQTT layer notifications from **Bambu Lab printers** and
 
 ---
 
-## ▶️ Usage
+## Usage
 
 Basic run:
 
@@ -82,7 +86,7 @@ python mqtt_trigger.py   --destination ./captures   --cafile ./blcert.pem   --us
 
 ---
 
-## ⚙️ Setup Steps
+## Setup Steps
 
 ### 1. Export Broker Certificate
 ```bash
@@ -112,7 +116,7 @@ mkdir captures
 
 ---
 
-## 🎞️ Post-Processing
+## Post-Processing
 
 ### Add Layer Pauses (Important!)
 
@@ -130,7 +134,7 @@ ffmpeg -framerate 30 -pattern_type glob -i "captures/*.jpg"  -c:v libx264 -r 30 
 
 ---
 
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 **Camera**  
 - Not detected → check USB & `gphoto2 --auto-detect`  
@@ -144,15 +148,15 @@ ffmpeg -framerate 30 -pattern_type glob -i "captures/*.jpg"  -c:v libx264 -r 30 
 
 ---
 
-## 🤝 Contributing
+## Contributing
 PRs welcome! Extend support for other printers or improve handling.
 
 ---
 
-## 📜 License
+## License
 MIT License.
 
 ---
 
-## 🧑‍💻 Support
+## Support
 Open an issue on GitHub if you encounter problems.
