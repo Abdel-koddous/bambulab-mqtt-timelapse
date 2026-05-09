@@ -5,3 +5,8 @@ captures
 blcert.pem
 .DS_Store
 *.log
+
+# AK specific files/directories
+mqtt-trigger-venv
+my_mqtt_config.json
+__pycache__

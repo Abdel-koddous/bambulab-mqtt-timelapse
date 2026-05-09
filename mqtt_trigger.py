@@ -2,34 +2,92 @@ import os
 import json
 import signal
 import sys
-from datetime import datetime as dt
+import ssl
 import argparse
 import logging
+from datetime import datetime as dt
+
 import gphoto2 as gp
 import paho.mqtt.client as mqtt
 
-log_formatter = logging.Formatter("%(levelname)s - %(message)s")
+from load_mqtt_settings import config_path, load_mqtt_settings
 
-stream_handler = logging.StreamHandler()
-stream_handler.setLevel(logging.INFO)
-stream_handler.setFormatter(log_formatter)
+# Non-sensitive defaults in source (sensitive: username, password, device_id via mqtt_local_config.json).
+DEFAULT_BROKER = "mqtt://us.mqtt.bambulab.com"
+DEFAULT_PORT = 8883
+DEFAULT_DESTINATION = "./captures"
 
-logging.basicConfig(level=logging.INFO, handlers=[stream_handler])
+_SETTINGS = load_mqtt_settings()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
 
 
-parser = argparse.ArgumentParser(description="MQTT Client with TLS and CA file")
-parser.add_argument(
-    "--destination", required=True, type=str, help="Destination folder for photos"
+def _broker_hostname(broker: str) -> str:
+    """Strip common URL schemes so paho gets a hostname (paho does not accept mqtt://…)."""
+    broker = broker.strip()
+    for prefix in ("mqtts://", "mqtt://", "ssl://", "tcp://"):
+        if broker.lower().startswith(prefix):
+            broker = broker[len(prefix) :]
+    return broker.split("/")[0].split(":")[0]
+
+
+parser = argparse.ArgumentParser(
+    description="MQTT timelapse trigger (TLS to Bambu broker; server cert not verified)"
 )
 parser.add_argument(
-    "--cafile", type=str, required=True, help="Path to CA certificate file"
+    "--destination",
+    type=str,
+    default=DEFAULT_DESTINATION,
+    help=f"Destination folder for photos (default: {DEFAULT_DESTINATION!r})",
 )
-parser.add_argument("--username", type=str, required=True, help="MQTT username")
-parser.add_argument("--password", type=str, required=True, help="MQTT password")
-parser.add_argument("--broker", type=str, required=True, help="MQTT broker")
-parser.add_argument("--port", type=int, required=True, help="MQTT port")
-parser.add_argument("--device_id", type=str, required=True, help="MQTT device ID")
+parser.add_argument(
+    "--username",
+    type=str,
+    default=_SETTINGS.get("username", ""),
+    help="MQTT username (default: username in mqtt_local_config.json)",
+)
+parser.add_argument(
+    "--password",
+    type=str,
+    default=_SETTINGS.get("password", ""),
+    help="MQTT password (default: password in mqtt_local_config.json)",
+)
+parser.add_argument(
+    "--broker",
+    type=str,
+    default=DEFAULT_BROKER,
+    help=f"MQTT broker hostname, IP, or mqtt:// URL (default: {DEFAULT_BROKER!r})",
+)
+parser.add_argument(
+    "--port",
+    type=int,
+    default=DEFAULT_PORT,
+    help=f"MQTT port (default: {DEFAULT_PORT})",
+)
+parser.add_argument(
+    "--device_id",
+    type=str,
+    default=_SETTINGS.get("device_id", ""),
+    help="Printer serial / MQTT device ID (default: device_id in mqtt_local_config.json)",
+)
 args = parser.parse_args()
+
+broker_host = _broker_hostname(args.broker)
+
+if not args.username or not args.password or not args.device_id:
+    logging.error(
+        "Missing username, password, or device_id. "
+        "Set them in %s (see mqtt_local_config.example.json) or pass CLI flags.",
+        config_path(),
+    )
+    sys.exit(1)
+
+if not broker_host:
+    logging.error("Broker hostname is empty after parsing (--broker).")
+    sys.exit(1)
 
 
 def on_message(client, userdata, msg):
@@ -108,12 +166,18 @@ except gp.GPhoto2Error as e:
     logging.error(f"Error connecting to camera: {e}")
     sys.exit(1)
 
-client = mqtt.Client()
+try:
+    client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
+except (AttributeError, TypeError):
+    client = mqtt.Client()
 client.on_message = on_message
 client.username_pw_set(username=args.username, password=args.password)
-client.tls_set(ca_certs=args.cafile, tls_version=mqtt.ssl.PROTOCOL_TLSv1_2)
+# TLS without verifying server certificate (same as MQTT Explorer “Validate certificate” off).
+client.tls_set(cert_reqs=ssl.CERT_NONE, tls_version=mqtt.ssl.PROTOCOL_TLSv1_2)
 client.tls_insecure_set(True)
-client.connect(args.broker, args.port, 60)
+
+logging.info("Connecting to %s:%s ...", broker_host, args.port)
+client.connect(broker_host, args.port, 60)
 client.subscribe(f"device/{args.device_id}/report")
 
 signal.signal(signal.SIGINT, handle_exit)
