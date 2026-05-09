@@ -164,7 +164,7 @@ try:
     logging.info("Camera connected successfully")
 except gp.GPhoto2Error as e:
     logging.error(f"Error connecting to camera: {e}")
-    sys.exit(1)
+    #sys.exit(1)
 
 try:
     client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
@@ -177,8 +177,11 @@ client.tls_set(cert_reqs=ssl.CERT_NONE, tls_version=mqtt.ssl.PROTOCOL_TLSv1_2)
 client.tls_insecure_set(True)
 
 logging.info("Connecting to %s:%s ...", broker_host, args.port)
-client.connect(broker_host, args.port, 60)
-client.subscribe(f"device/{args.device_id}/report")
+client.connect(broker_host, args.port, keepalive=60)
+
+topic = f"device/{args.device_id}/report"
+logging.info("Subscribing to %s", topic)
+client.subscribe(topic)
 
 signal.signal(signal.SIGINT, handle_exit)
 signal.signal(signal.SIGTERM, handle_exit)
