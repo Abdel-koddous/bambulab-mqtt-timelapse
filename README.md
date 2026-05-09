@@ -114,6 +114,18 @@ Trigger condition:
 mkdir captures
 ```
 
+### 4. To Connect over Bambulab cloud (UserId and AccessToken)
+#### How to Request Access token
+```bash
+# Request a one-time login code 
+curl -X POST https://api.bambulab.com/v1/user-service/user/sendemail/code   -H "Content-Type: application/json"   -d '{"email":"your@email.com","type":"codeLogin"}'
+
+# Use received code byemail to request the access token
+curl -X POST https://api.bambulab.com/v1/user-service/user/login   -H "Content-Type: application/json"   -d '{ "account": "your@email.com", "code": "received-code"}'
+ ```
+```
+
+
 ---
 
 ## Post-Processing
