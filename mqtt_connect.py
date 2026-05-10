@@ -9,13 +9,10 @@ import sys
 import ssl
 import paho.mqtt.client as mqtt
 
-from load_mqtt_settings import config_path, load_mqtt_settings
-
-# Non-sensitive defaults in source (sensitive: username, password, device_id via mqtt_local_config.json).
-DEFAULT_BROKER = "mqtt://us.mqtt.bambulab.com"
-DEFAULT_PORT = 8883
+from load_mqtt_settings import config_path, load_mqtt_settings, mqtt_port
 
 _SETTINGS = load_mqtt_settings()
+_DEFAULT_PORT = mqtt_port(_SETTINGS, 8883)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -37,29 +34,29 @@ def parse_args():
     )
     p.add_argument(
         "--broker",
-        default=DEFAULT_BROKER,
-        help=f"MQTT broker hostname or printer LAN IP (default: {DEFAULT_BROKER!r})",
+        default=_SETTINGS.get("broker", ""),
+        help="MQTT broker hostname, IP, or mqtt:// URL (default: broker in my_mqtt_config.json)",
     )
     p.add_argument(
         "--port",
         type=int,
-        default=DEFAULT_PORT,
-        help=f"MQTT port (default: {DEFAULT_PORT})",
+        default=_DEFAULT_PORT,
+        help=f"MQTT port (default: port in my_mqtt_config.json or {_DEFAULT_PORT})",
     )
     p.add_argument(
         "--username",
         default=_SETTINGS.get("username", ""),
-        help="MQTT username (default: username in mqtt_local_config.json)",
+        help="MQTT username (default: username in my_mqtt_config.json)",
     )
     p.add_argument(
         "--password",
         default=_SETTINGS.get("password", ""),
-        help="MQTT password / cloud token (default: password in mqtt_local_config.json)",
+        help="MQTT password / cloud token (default: password in my_mqtt_config.json)",
     )
     p.add_argument(
         "--device_id",
         default=_SETTINGS.get("device_id", ""),
-        help="Printer serial number (default: device_id in mqtt_local_config.json)",
+        help="Printer serial number (default: device_id in my_mqtt_config.json)",
     )
     return p.parse_args()
 
@@ -78,8 +75,8 @@ def main():
     if not broker or not args.username or not args.password or not args.device_id:
         logging.error(
             "Missing broker, username, password, or device_id. "
-            "Set username, password, device_id in %s (see mqtt_local_config.example.json), "
-            "or pass CLI flags.",
+            "Set broker, port, username, password, device_id in %s "
+            "(see mqtt_config_sample.json) or pass CLI flags.",
             config_path(),
         )
         sys.exit(1)

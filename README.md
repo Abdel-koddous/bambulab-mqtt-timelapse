@@ -122,9 +122,7 @@ curl -X POST https://api.bambulab.com/v1/user-service/user/sendemail/code   -H "
 
 # Use received code byemail to request the access token
 curl -X POST https://api.bambulab.com/v1/user-service/user/login   -H "Content-Type: application/json"   -d '{ "account": "your@email.com", "code": "received-code"}'
- ```
 ```
-
 
 ---
 
@@ -134,8 +132,7 @@ curl -X POST https://api.bambulab.com/v1/user-service/user/login   -H "Content-T
 
 Insert wait commands into G-code so the camera has time to shoot:
 ```bash
-sed -i '' -r "/^M991 S0 P[0-9]+.*$/s/.*/&
-M400 S8/" your_file.gcode
+sed -i -E '/^M991 S0 P[0-9]+/s/$/\nM400 S8/' your_file.gcode
 ```
 Adds `M400 S8` (8 sec wait) after each layer notification.
 
