@@ -8,5 +8,5 @@ blcert.pem
 
 # AK specific files/directories
 mqtt-trigger-venv
-my_mqtt_config.json
+my_mqtt_config*.json
 __pycache__
