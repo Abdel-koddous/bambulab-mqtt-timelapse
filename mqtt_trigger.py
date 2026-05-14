@@ -6,6 +6,7 @@ import ssl
 import argparse
 import logging
 from datetime import datetime as dt
+import time
 
 import gphoto2 as gp
 import paho.mqtt.client as mqtt
@@ -92,11 +93,14 @@ if not broker_host:
 def on_message(client, userdata, msg):
     try:
         payload = json.loads(msg.payload.decode())
-        logging.info(f"Received message: {payload}")
+        logging.debug(f"Received message: {payload}")
         if payload.get("print") and (
             payload["print"].get("layer_num") and payload["print"].get("msg") == 1
         ):
             try:
+                logging.info(f"Received payload has layer_num => {payload['print']['layer_num']}")
+                logging.info(f"Received payload: {payload}")
+                time.sleep(2) # Temp fix to give time to printer head to be back in pos before capture
                 capture_photo(args.destination)
             except Exception as e:
                 logging.error(f"Pausing print job due to error: {e}")
